@@ -1,0 +1,129 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<link rel="stylesheet" href="{{url_for('static', filename='jquery-ui.theme.css')}}">
+<link rel="stylesheet" href="{{url_for('static', filename='jquery-ui.structure.css')}}">
+<link rel="stylesheet" href="{{url_for('static', filename='style.css')}}">
+<script type="text/javascript" src="{{url_for('static', filename='jquery.js')}}"> </script>
+<script type="text/javascript" src="{{url_for('static', filename='jquery-ui.js')}}"> </script>
+<script type="text/javascript">
+function getCanvasCtx() {
+	var canvas = $("#main")[0];
+	return canvas.getContext("2d");
+};
+
+cg =  {
+	image_idx: 0,
+	images: {},
+	addImage: function(image) {
+		this.images[this.image_idx] = image;
+		this.image_idx++;
+		return this.image_idx -1;
+	},
+	replaceImage: function(id, image) {
+		this.images[id] = image;
+	}
+};
+
+settings = {
+	default_x: 100,
+	default_y: 100,
+	default_width: 100,
+	default_height: 100
+
+};
+
+function ImageElement(x, y, width, height) {
+	this.x = x;
+	this.y = y;
+	this.width = width;
+	this.height = height;
+};
+
+function renderCanvas() {
+	ctx = getCanvasCtx();
+	ctx.fillStyle = "white";
+	ctx.clearRect(0, 0, 250, 250);
+	for (var i=0; i<Object.keys(cg.images).length; i++) {
+		var image = cg.images[i];
+		ctx.fillStyle = "#FF0000";
+		ctx.fillRect(image.x, image.y, image.width, image.height);
+	}
+}
+
+function createSpinner(selector, value) {
+	var obj = $(selector);
+	obj.spinner({change: updateImage, spin: updateImage});
+	obj.val(value);
+}
+function getImageFormValues(image_form) {
+	return {
+		id: image_form.find('input[name=id]').val(),
+		x: image_form.find('input[name=x]').spinner("value"),
+		y: image_form.find('input[name=y]').spinner("value"),
+		width: image_form.find('input[name=width]').spinner("value"),
+		height: image_form.find('input[name=height]').spinner("value")
+	};
+}
+
+function createImage(evt, i_x, i_y, i_width, i_height) {
+	if (!i_x) i_x = settings.default_x;
+	if (!i_y) i_y = settings.default_y;
+	if (!i_width) i_width = settings.default_width;
+	if (!i_height) i_height = settings.default_height;
+	var id = cg.addImage(new ImageElement(i_x, i_y, i_width, i_height));
+
+	$('<div/>', {
+		   'class' : 'imageForm image_form'+cg.image_idx, html: GetHtml()
+	 }).appendTo('#image_forms');
+	$('.image_form'+cg.image_idx+' input[name=id]').val(id);
+	createSpinner('.image_form'+cg.image_idx+' input[name=x]', i_x);
+	createSpinner('.image_form'+cg.image_idx+' input[name=y]', i_y);
+	createSpinner('.image_form'+cg.image_idx+' input[name=width]', i_width);
+	createSpinner('.image_form'+cg.image_idx+' input[name=height]', i_height);
+	renderCanvas();
+};
+
+function updateImage(evt) {
+	var image_selector = $(evt.target).parent().parent();
+	var v = getImageFormValues(image_selector);
+	cg.replaceImage(v.id, new ImageElement(v.x, v.y, v.width, v.height));
+	renderCanvas();
+}
+
+function GetHtml() //Get the template and update the input field names
+{
+  var len = $('.imageForm').length;
+    var $html = $('.imageFormTemplate').clone();
+    return $html.html();    
+};
+
+$(function () {
+	cg.addImage(new ImageElement(20, 20, 10, 10));
+	 renderCanvas();
+     $('#addImageForm').click(createImage);
+ })
+</script>
+</head>
+<body>
+<!-- Templates -->
+<div class="imageFormTemplate">
+	<input type="hidden" name="id">
+	<input placeholder="Left" type="text" name="x">
+	<input placeholder="Top" type="text" name="y">
+	<input placeholder="Width" type="text" name="width">
+	<input placeholder="Height" type="text" name="height">
+</div>
+<!-- End Templates -->
+
+<div class="canvas_holder">
+	<canvas id="main" width="250" height="250"></canvas>
+</div>
+
+<h1> Images </h1>
+<div id="image_forms"></div>
+
+<a href="#" id="addImageForm"><i class="icon-plus-sign icon-white"></i> Add Image</p></a>
+</body>
+
+</html>
